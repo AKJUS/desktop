@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { Account } from '../../models/account'
+import { Account, isDotComAccount } from '../../models/account'
 import { PreferencesTab } from '../../models/preferences'
 import { Dispatcher } from '../dispatcher'
 import { TabBar, TabBarType } from '../tab-bar'
@@ -12,7 +12,6 @@ import {
   getGlobalConfigValue,
   setGlobalConfigValue,
 } from '../../lib/git/config'
-import { getGlobalConfigPath } from '../../lib/git'
 import { lookupPreferredEmail } from '../../lib/email'
 import { Shell, getAvailableShells } from '../../lib/shells'
 import { getAvailableEditors } from '../../lib/editors/lookup'
@@ -44,10 +43,6 @@ import { Repository } from '../../models/repository'
 import { Notifications } from './notifications'
 import { Accessibility } from './accessibility'
 import {
-  enableExternalCredentialHelper,
-  enableLinkUnderlines,
-} from '../../lib/feature-flag'
-import {
   ICustomIntegration,
   TargetPathArgument,
   isValidCustomIntegration,
@@ -55,6 +50,7 @@ import {
 
 interface IPreferencesProps {
   readonly dispatcher: Dispatcher
+  readonly accounts: ReadonlyArray<Account>
   readonly dotComAccount: Account | null
   readonly enterpriseAccount: Account | null
   readonly repository: Repository | null
@@ -72,6 +68,7 @@ interface IPreferencesProps {
   readonly confirmCheckoutCommit: boolean
   readonly confirmForcePush: boolean
   readonly confirmUndoCommit: boolean
+  readonly askForConfirmationOnCommitFilteredChanges: boolean
   readonly uncommittedChangesStrategy: UncommittedChangesStrategy
   readonly selectedExternalEditor: string | null
   readonly selectedShell: Shell
@@ -82,9 +79,10 @@ interface IPreferencesProps {
   readonly useCustomShell: boolean
   readonly customShell: ICustomIntegration | null
   readonly repositoryIndicatorsEnabled: boolean
-  readonly onOpenFileInExternalEditor: (path: string) => void
+  readonly onEditGlobalGitConfig: () => void
   readonly underlineLinks: boolean
   readonly showDiffCheckMarks: boolean
+  readonly canFilterChanges: boolean
 }
 
 interface IPreferencesState {
@@ -108,6 +106,7 @@ interface IPreferencesState {
   readonly confirmCheckoutCommit: boolean
   readonly confirmForcePush: boolean
   readonly confirmUndoCommit: boolean
+  readonly askForConfirmationOnCommitFilteredChanges: boolean
   readonly uncommittedChangesStrategy: UncommittedChangesStrategy
   readonly availableEditors: ReadonlyArray<string>
   readonly useCustomEditor: boolean
@@ -132,11 +131,12 @@ interface IPreferencesState {
   readonly initiallySelectedTabSize: number
 
   readonly isLoadingGitConfig: boolean
-  readonly globalGitConfigPath: string | null
 
   readonly underlineLinks: boolean
 
   readonly showDiffCheckMarks: boolean
+
+  readonly canFilterChanges: boolean
 }
 
 /**
@@ -183,6 +183,7 @@ export class Preferences extends React.Component<
       confirmCheckoutCommit: false,
       confirmForcePush: false,
       confirmUndoCommit: false,
+      askForConfirmationOnCommitFilteredChanges: false,
       uncommittedChangesStrategy: defaultUncommittedChangesStrategy,
       selectedExternalEditor: this.props.selectedExternalEditor,
       availableShells: [],
@@ -191,9 +192,9 @@ export class Preferences extends React.Component<
       initiallySelectedTheme: this.props.selectedTheme,
       initiallySelectedTabSize: this.props.selectedTabSize,
       isLoadingGitConfig: true,
-      globalGitConfigPath: null,
       underlineLinks: this.props.underlineLinks,
       showDiffCheckMarks: this.props.showDiffCheckMarks,
+      canFilterChanges: this.props.canFilterChanges,
     }
   }
 
@@ -206,7 +207,8 @@ export class Preferences extends React.Component<
     let committerEmail = initialCommitterEmail
 
     if (!committerName || !committerEmail) {
-      const account = this.props.dotComAccount || this.props.enterpriseAccount
+      const { accounts } = this.props
+      const account = accounts.find(isDotComAccount) ?? accounts.at(0)
 
       if (account) {
         if (!committerName) {
@@ -230,8 +232,6 @@ export class Preferences extends React.Component<
     const availableEditors = editors.map(e => e.editor) ?? null
     const availableShells = shells.map(e => e.shell) ?? null
 
-    const globalGitConfigPath = await getGlobalConfigPath()
-
     this.setState({
       committerName,
       committerEmail,
@@ -252,6 +252,8 @@ export class Preferences extends React.Component<
       confirmCheckoutCommit: this.props.confirmCheckoutCommit,
       confirmForcePush: this.props.confirmForcePush,
       confirmUndoCommit: this.props.confirmUndoCommit,
+      askForConfirmationOnCommitFilteredChanges:
+        this.props.askForConfirmationOnCommitFilteredChanges,
       uncommittedChangesStrategy: this.props.uncommittedChangesStrategy,
       availableShells,
       availableEditors,
@@ -260,7 +262,6 @@ export class Preferences extends React.Component<
       useCustomShell: this.props.useCustomShell,
       customShell: this.props.customShell ?? DefaultCustomIntegration,
       isLoadingGitConfig: false,
-      globalGitConfigPath,
     })
   }
 
@@ -318,12 +319,10 @@ export class Preferences extends React.Component<
               <Octicon className="icon" symbol={octicons.gear} />
               Advanced
             </span>
-            {enableLinkUnderlines() && (
-              <span id={this.getTabId(PreferencesTab.Accessibility)}>
-                <Octicon className="icon" symbol={octicons.accessibility} />
-                Accessibility
-              </span>
-            )}
+            <span id={this.getTabId(PreferencesTab.Accessibility)}>
+              <Octicon className="icon" symbol={octicons.accessibility} />
+              Accessibility
+            </span>
           </TabBar>
 
           {this.renderActiveTab()}
@@ -397,8 +396,7 @@ export class Preferences extends React.Component<
       case PreferencesTab.Accounts:
         View = (
           <Accounts
-            dotComAccount={this.props.dotComAccount}
-            enterpriseAccount={this.props.enterpriseAccount}
+            accounts={this.props.accounts}
             onDotComSignIn={this.onDotComSignIn}
             onEnterpriseSignIn={this.onEnterpriseSignIn}
             onLogout={this.onLogout}
@@ -452,9 +450,7 @@ export class Preferences extends React.Component<
               onEmailChanged={this.onCommitterEmailChanged}
               onDefaultBranchChanged={this.onDefaultBranchChanged}
               isLoadingGitConfig={this.state.isLoadingGitConfig}
-              selectedExternalEditor={this.props.selectedExternalEditor}
-              onOpenFileInExternalEditor={this.props.onOpenFileInExternalEditor}
-              globalGitConfigPath={this.state.globalGitConfigPath}
+              onEditGlobalGitConfig={this.props.onEditGlobalGitConfig}
             />
           </>
         )
@@ -490,6 +486,9 @@ export class Preferences extends React.Component<
             confirmCheckoutCommit={this.state.confirmCheckoutCommit}
             confirmForcePush={this.state.confirmForcePush}
             confirmUndoCommit={this.state.confirmUndoCommit}
+            askForConfirmationOnCommitFilteredChanges={
+              this.state.askForConfirmationOnCommitFilteredChanges
+            }
             onConfirmRepositoryRemovalChanged={
               this.onConfirmRepositoryRemovalChanged
             }
@@ -501,6 +500,9 @@ export class Preferences extends React.Component<
               this.onConfirmDiscardChangesPermanentlyChanged
             }
             onConfirmUndoCommitChanged={this.onConfirmUndoCommitChanged}
+            onAskForConfirmationOnCommitFilteredChanges={
+              this.onAskForConfirmationOnCommitFilteredChanges
+            }
             uncommittedChangesStrategy={this.state.uncommittedChangesStrategy}
             onUncommittedChangesStrategyChanged={
               this.onUncommittedChangesStrategyChanged
@@ -520,6 +522,7 @@ export class Preferences extends React.Component<
             optOutOfUsageTracking={this.state.optOutOfUsageTracking}
             useExternalCredentialHelper={this.state.useExternalCredentialHelper}
             repositoryIndicatorsEnabled={this.state.repositoryIndicatorsEnabled}
+            canFilterChanges={this.state.canFilterChanges}
             onUseWindowsOpenSSHChanged={this.onUseWindowsOpenSSHChanged}
             onOptOutofReportingChanged={this.onOptOutofReportingChanged}
             onUseExternalCredentialHelperChanged={
@@ -528,6 +531,7 @@ export class Preferences extends React.Component<
             onRepositoryIndicatorsEnabledChanged={
               this.onRepositoryIndicatorsEnabledChanged
             }
+            onCanFilterChangesChanged={this.onCanFilterChangesChanged}
           />
         )
         break
@@ -561,6 +565,10 @@ export class Preferences extends React.Component<
     repositoryIndicatorsEnabled: boolean
   ) => {
     this.setState({ repositoryIndicatorsEnabled })
+  }
+
+  private onCanFilterChangesChanged = (canFilterChanges: boolean) => {
+    this.setState({ canFilterChanges })
   }
 
   private onLockFileDeleted = () => {
@@ -619,6 +627,10 @@ export class Preferences extends React.Component<
 
   private onConfirmUndoCommitChanged = (value: boolean) => {
     this.setState({ confirmUndoCommit: value })
+  }
+
+  private onAskForConfirmationOnCommitFilteredChanges = (value: boolean) => {
+    this.setState({ askForConfirmationOnCommitFilteredChanges: value })
   }
 
   private onUncommittedChangesStrategyChanged = (
@@ -780,15 +792,13 @@ export class Preferences extends React.Component<
       dispatcher.setCustomShell(customShell)
     }
 
-    if (enableExternalCredentialHelper()) {
-      if (
-        this.props.useExternalCredentialHelper !==
+    if (
+      this.props.useExternalCredentialHelper !==
+      this.state.useExternalCredentialHelper
+    ) {
+      dispatcher.setUseExternalCredentialHelper(
         this.state.useExternalCredentialHelper
-      ) {
-        dispatcher.setUseExternalCredentialHelper(
-          this.state.useExternalCredentialHelper
-        )
-      }
+      )
     }
 
     await dispatcher.setConfirmRepoRemovalSetting(
@@ -806,6 +816,9 @@ export class Preferences extends React.Component<
     )
 
     await dispatcher.setConfirmUndoCommitSetting(this.state.confirmUndoCommit)
+    await dispatcher.setConfirmCommitFilteredChanges(
+      this.state.askForConfirmationOnCommitFilteredChanges
+    )
 
     if (this.state.selectedExternalEditor) {
       await dispatcher.setExternalEditor(this.state.selectedExternalEditor)
@@ -825,6 +838,8 @@ export class Preferences extends React.Component<
     dispatcher.setUnderlineLinksSetting(this.state.underlineLinks)
 
     dispatcher.setDiffCheckMarksSetting(this.state.showDiffCheckMarks)
+
+    dispatcher.setCanFilterChanges(this.state.canFilterChanges)
 
     this.props.onDismissed()
   }

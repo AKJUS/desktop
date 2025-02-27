@@ -233,6 +233,10 @@ function copyEmoji() {
   const emojiImagesDestination = path.join(outRoot, 'emoji')
   removeAndCopy(emojiImages, emojiImagesDestination)
 
+  // Remove unicode-based emoji images (use the unicode emojis instead)
+  const emojiImagesUnicode = path.join(emojiImagesDestination, 'unicode')
+  rmSync(emojiImagesUnicode, { recursive: true, force: true })
+
   const emojiJSON = path.join(projectRoot, 'gemoji', 'db', 'emoji.json')
   const emojiJSONDestination = path.join(outRoot, 'emoji.json')
   removeAndCopy(emojiJSON, emojiJSONDestination)
@@ -331,7 +335,7 @@ function copyDependencies() {
   copySync(path.resolve(projectRoot, 'app/node_modules/dugite/git'), gitDir)
 
   console.log('  Copying desktop credential helper…')
-  const mingw = getDistArchitecture() === 'x64' ? 'mingw64' : 'mingw32'
+  const mingw = getDistArchitecture() === 'x64' ? 'mingw64' : 'clangarm64'
   const gitCoreDir =
     process.platform === 'win32'
       ? path.resolve(outRoot, 'git', mingw, 'libexec', 'git-core')

@@ -38,7 +38,7 @@ on:
       APPLE_APPLICATION_CERT_PASSWORD:
 
 env:
-  NODE_VERSION: 20.11.1
+  NODE_VERSION: 20.18.1
 
 jobs:
   lint:
@@ -70,14 +70,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-13-xl-arm64, windows-2019]
+        os: [macos-13-xlarge, windows-2019]
         arch: [x64, arm64]
         include:
-          - os: macos-13-xl-arm64
+          - os: macos-13-xlarge
             friendlyName: macOS
           - os: windows-2019
             friendlyName: Windows
     timeout-minutes: 60
+    environment: ${{ inputs.environment }}
     env:
       RELEASE_CHANNEL: ${{ inputs.environment }}
     steps:

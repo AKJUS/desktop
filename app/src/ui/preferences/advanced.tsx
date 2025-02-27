@@ -4,17 +4,19 @@ import { Checkbox, CheckboxValue } from '../lib/checkbox'
 import { LinkButton } from '../lib/link-button'
 import { SamplesURL } from '../../lib/stats'
 import { isWindowsOpenSSHAvailable } from '../../lib/ssh/ssh'
-import { enableExternalCredentialHelper } from '../../lib/feature-flag'
+import { enableFilteredChangesList } from '../../lib/feature-flag'
 
 interface IAdvancedPreferencesProps {
   readonly useWindowsOpenSSH: boolean
   readonly optOutOfUsageTracking: boolean
   readonly useExternalCredentialHelper: boolean
   readonly repositoryIndicatorsEnabled: boolean
+  readonly canFilterChanges: boolean
   readonly onUseWindowsOpenSSHChanged: (checked: boolean) => void
   readonly onOptOutofReportingChanged: (checked: boolean) => void
   readonly onUseExternalCredentialHelperChanged: (checked: boolean) => void
   readonly onRepositoryIndicatorsEnabledChanged: (enabled: boolean) => void
+  readonly onCanFilterChangesChanged: (enabled: boolean) => void
 }
 
 interface IAdvancedPreferencesState {
@@ -75,6 +77,12 @@ export class Advanced extends React.Component<
     this.props.onUseWindowsOpenSSHChanged(event.currentTarget.checked)
   }
 
+  private onCanFilterChangesChanged = (
+    event: React.FormEvent<HTMLInputElement>
+  ) => {
+    this.props.onCanFilterChangesChanged(event.currentTarget.checked)
+  }
+
   private reportDesktopUsageLabel() {
     return (
       <span>
@@ -127,38 +135,56 @@ export class Advanced extends React.Component<
             onChange={this.onReportingOptOutChanged}
           />
         </div>
-        {(this.state.canUseWindowsSSH || enableExternalCredentialHelper()) && (
-          <h2>Network and credentials</h2>
-        )}
+        <h2>Network and credentials</h2>
         {this.renderSSHSettings()}
-        {enableExternalCredentialHelper() && (
-          <div className="advanced-section">
-            <Checkbox
-              label={'Use Git Credential Manager'}
-              value={
-                this.state.useExternalCredentialHelper
-                  ? CheckboxValue.On
-                  : CheckboxValue.Off
-              }
-              onChange={this.onUseExternalCredentialHelperChanged}
-              ariaDescribedBy="use-external-credential-helper-description"
-            />
-            <div
-              id="use-external-credential-helper-description"
-              className="git-settings-description"
-            >
-              <p>
-                Use{' '}
-                <LinkButton uri="https://gh.io/gcm">
-                  Git Credential Manager{' '}
-                </LinkButton>{' '}
-                for private repositories outside of GitHub.com. This feature is
-                experimental and subject to change.
-              </p>
-            </div>
+        <div className="advanced-section">
+          <Checkbox
+            label={'Use Git Credential Manager'}
+            value={
+              this.state.useExternalCredentialHelper
+                ? CheckboxValue.On
+                : CheckboxValue.Off
+            }
+            onChange={this.onUseExternalCredentialHelperChanged}
+            ariaDescribedBy="use-external-credential-helper-description"
+          />
+          <div
+            id="use-external-credential-helper-description"
+            className="git-settings-description"
+          >
+            <p>
+              Use{' '}
+              <LinkButton uri="https://gh.io/gcm">
+                Git Credential Manager{' '}
+              </LinkButton>{' '}
+              for private repositories outside of GitHub.com. This feature is
+              experimental and subject to change.
+            </p>
           </div>
-        )}
+        </div>
+        {this.renderFilteredChangesSetting()}
       </DialogContent>
+    )
+  }
+
+  private renderFilteredChangesSetting() {
+    if (!enableFilteredChangesList()) {
+      return
+    }
+
+    return (
+      <>
+        <h2>Filter Changes</h2>
+        <div className="advanced-section">
+          <Checkbox
+            label={'Filter Changes'}
+            value={
+              this.props.canFilterChanges ? CheckboxValue.On : CheckboxValue.Off
+            }
+            onChange={this.onCanFilterChangesChanged}
+          />
+        </div>{' '}
+      </>
     )
   }
 

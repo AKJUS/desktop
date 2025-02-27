@@ -50,6 +50,7 @@ import { RepoRulesInfo } from '../models/repo-rules'
 import { IAPIRepoRuleset } from './api'
 import { ICustomIntegration } from './custom-integration'
 import { Emoji } from './emoji'
+import { IUpdateState } from '../ui/lib/update-store'
 
 export enum SelectionType {
   Repository,
@@ -232,6 +233,9 @@ export interface IAppState {
   /** Should the app prompt the user to confirm an undo commit? */
   readonly askForConfirmationOnUndoCommit: boolean
 
+  /** Should the app prompt the user to confirm they want to commit with changes are hidden by filter? */
+  readonly askForConfirmationOnCommitFilteredChanges: boolean
+
   /** How the app should handle uncommitted changes when switching branches */
   readonly uncommittedChangesStrategy: UncommittedChangesStrategy
 
@@ -368,6 +372,9 @@ export interface IAppState {
   readonly cachedRepoRulesets: ReadonlyMap<number, IAPIRepoRuleset>
 
   readonly underlineLinks: boolean
+
+  readonly canFilterChanges: boolean
+  readonly updateState: IUpdateState
 }
 
 export enum FoldoutType {

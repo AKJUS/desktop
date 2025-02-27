@@ -52,6 +52,7 @@ interface IRepositoryViewProps {
   readonly showSideBySideDiff: boolean
   readonly showDiffCheckMarks: boolean
   readonly askForConfirmationOnDiscardChanges: boolean
+  readonly askForConfirmationOnCommitFilteredChanges: boolean
   readonly askForConfirmationOnDiscardStash: boolean
   readonly askForConfirmationOnCheckoutCommit: boolean
   readonly focusCommitMessage: boolean
@@ -108,6 +109,8 @@ interface IRepositoryViewProps {
 
   /** The user's preference of pull request suggested next action to use **/
   readonly pullRequestSuggestedNextAction?: PullRequestSuggestedNextAction
+
+  readonly canFilterChanges: boolean
 }
 
 interface IRepositoryViewState {
@@ -250,6 +253,9 @@ export class RepositoryView extends React.Component<
         askForConfirmationOnDiscardChanges={
           this.props.askForConfirmationOnDiscardChanges
         }
+        askForConfirmationOnCommitFilteredChanges={
+          this.props.askForConfirmationOnCommitFilteredChanges
+        }
         accounts={this.props.accounts}
         isShowingModal={this.props.isShowingModal}
         isShowingFoldout={this.props.isShowingFoldout}
@@ -262,6 +268,7 @@ export class RepositoryView extends React.Component<
         }
         commitSpellcheckEnabled={this.props.commitSpellcheckEnabled}
         showCommitLengthWarning={this.props.showCommitLengthWarning}
+        canFilterChanges={this.props.canFilterChanges}
       />
     )
   }
@@ -351,6 +358,7 @@ export class RepositoryView extends React.Component<
           minimumWidth={this.props.sidebarWidth.min}
           onReset={this.handleSidebarWidthReset}
           onResize={this.handleSidebarResize}
+          description="Repository sidebar"
         >
           {this.renderTabs()}
           {this.renderSidebarContents()}

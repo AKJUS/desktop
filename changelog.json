@@ -1,5 +1,197 @@
 {
   "releases": {
+    "3.4.17": [
+      "[Fixed] Dialogs announce their titles on macOS Sequoia for VoiceOver users - #20009",
+      "[Fixed] The commit button words are separated by spaces for screen reader users - #20011",
+      "[Fixed] Prevent crash when attempting to launch external editor with insufficient permissions - #19929",
+      "[Fixed] Running the Desktop CLI on Windows no longer waits for Desktop to exit before exiting itself - #19916",
+      "[Improved] Announce update progress in about dialog - #20018",
+      "[Improved] Buttons with dropdown caret that trigger context menus can be opened with down arrow - #20007",
+      "[Improved] Links that do not open external urls now have a role of button for improved screen reader semantics - #20010",
+      "[Improved] Email attribution warning only considers verified emails - #19968",
+      "[Improved] Improve tooltip for unknown co-authors - #19992",
+      "[Improved] The length of shortened SHAs are consistently 7 characters - #19902. Thanks @molnarriso!",
+      "[Improved] Upgrade Electron to v34.0.1 - #19919",
+      "[Removed] Remove support for macOS 10.15 - #19919"
+    ],
+    "3.4.17-beta3": [
+      "[Fixed] Dialogs announce their titles on macOS Sequoia for VoiceOver users - #20009",
+      "[Fixed] The commit button words are separated by spaces for screen reader users - #20011",
+      "[Improved] Announce update progress in about dialog - #20018",
+      "[Improved] Buttons with dropdown caret that trigger context menus can be opened with down arrow - #20007",
+      "[Improved] Links that do not open external urls now have a role of button for improved screen reader semantics - #20010",
+      "[Improved] Email attribution warning only considers verified emails - #19968"
+    ],
+    "3.4.17-beta2": [
+      "[Fixed] Opening autocomplete inputs no longer causes a crash due to resize observer error - #19997",
+      "[Improved] Improve tooltip for unknown co-authors - #19992",
+      "[Improved] The length of shortened SHAs are consistently 9 characters - #19902. Thanks @molnarriso!"
+    ],
+    "3.4.17-beta1": [
+      "[Fixed] Prevent crash when attempting to launch external editor with insufficient permissions - #19929",
+      "[Fixed] Running the Desktop CLI on Windows no longer waits for Desktop to exit before exiting itself - #19916",
+      "[Improved] Upgrade Electron to v34.0.1 - #19919",
+      "[Removed] Remove support for macOS 10.15 - #19919"
+    ],
+    "3.4.16": [
+      "[Improved] Prevent upgrading from macOS 10.15 as soon to be unsupported - #19918"
+    ],
+    "3.4.16-beta2": [
+      "[Improved] Prevent upgrading from macOS 10.15 as soon to be unsupported - #19918"
+    ],
+    "3.4.16-beta1": [
+      "[New] Add support for arm64 version of Git on Windows - #19880. Thanks @dennisameling",
+      "[Fixed] Restore ability to sign in on Windows - #19873",
+      "[Fixed] Moving maximized window in windows - #19786. Thanks @ahrm!",
+      "[Improved] Upgrade embedded Git to v2.47.1 on macOS, and to v2.47.2.windows.2 on Windows"
+    ],
+    "3.4.15": ["[Fixed] Restore ability to sign in on Windows"],
+    "3.4.14": [
+      "[Added] Add Ghostty shell integration - #19777. Thanks @aelew!",
+      "[Fixed] No extra new line is prepended to `.gitignore` when adding to a non-existent `.gitignore` file - #19279. Thanks @GWDx!",
+      "[Fixed] Fix Branch List context menu showing pull request option when none exists - #19711. Thanks @DylanDevelops!",
+      "[Fixed] The Thank You banner is announced by VoiceOver - #19734",
+      "[Fixed] The \"Showcase Update Banner\" and \"OS version No Longer Supported Banner\" announce their messages when using VoiceOver.",
+      "[Fixed] Showcase update banner's \"x\" button will dismiss the banner.",
+      "[Improved] Desktop's CLI no longer communicates with the app via protocol handlers - #19733",
+      "[Improved] Defer expensive path validation until it's required - #19694",
+      "[Removed] Remove the tooltip on the CI status indicator - #19735",
+      "[Removed] Drop support for Atom, invoke editors directly - #19744",
+      "[Removed] The \"Accessibility Settings\" announcement banner is removed."
+    ],
+    "3.4.13": [
+      "[Fixed] Mitigates several vulnerabilities related to Git's credential helper protocol - CVE-2025-23040, CVE-2024-50349, CVE-2024-52006, CVE-2024-50338, CVE-2024-53263"
+    ],
+    "3.4.13-beta2": [
+      "[Added] Add Ghostty shell integration - #19777. Thanks @aelew!",
+      "[Fixed] Mitigates several vulnerabilities related to Git's credential helper protocol - CVE-2024-50349, CVE-2024-52006, CVE-2024-50338, CVE-2024-53263",
+      "[Fixed] No extra new line is prepended to `.gitignore` when adding to a non-existent `.gitignore` file - #19279. Thanks @GWDx!"
+    ],
+    "3.4.13-beta1": [
+      "[Fixed] Fix Branch List context menu showing pull request option when none exists - #19711. Thanks @DylanDevelops!",
+      "[Fixed] The Thank You banner is announced by VoiceOver - #19734",
+      "[Improved] Have CLI invoke the app directly - #19733",
+      "[Improved] Don't execute rev-parse unless we have to - #19694",
+      "[Removed] Remove the tooltip on the CI status indicator - #19735",
+      "[Removed] Drop support for Atom, invoke editors directly - #19744"
+    ],
+    "3.4.12": [
+      "[Fixed] Merge branch dialog updates whether a branch can be merged when changing selection - #19730"
+    ],
+    "3.4.12-beta1": [
+      "[Fixed] Merge branch dialog updates whether a branch can be merged when changing selection - #19730",
+      "[Fixed] Close diff options on mouse down outside of popover - #19644",
+      "[Fixed] Cap output from git at string max length - #19724",
+      "[Improved] Add aria label and aria description to ignore files text area in repository settings - #19684",
+      "[Improved] The link target height of the \"Terms and Conditions\" and \"License and Open Source Notices\" in the about dialog are 24px - #19685",
+      "[Improved] The contrast of the pending checks header text and progress pie chart meets 3:1 contrast requirements - #19687"
+    ],
+    "3.4.11": [
+      "[Fixed] Prevent crash due to excessively long Git output - #19724"
+    ],
+    "3.4.10": [
+      "[Added] Add a banner for communicating when prioritized updates exist - #19655",
+      "[Added] Add \"View Pull Request on GitHub\" Option to the Checked-Out Branch Button and Pull Requests List - #19453. Thanks @DylanDevelops!",
+      "[Fixed] Accurately calculate number of conflicted files in a merge - #8049",
+      "[Fixed] Inform user when a staged renamed file has changes - #17467. Thanks @ssigwart!",
+      "[Fixed] The visual label for the remote url in the repository settings is announced by screen readers - #19647",
+      "[Fixed] Remove duplicate avatar users - #19597",
+      "[Fixed] Fix for indents of clear button in text box - #19613. Thanks @artbutko!",
+      "[Fixed] Screen readers announce the position of the list items in selectable lists such as the history commit list - #19603",
+      "[Fixed] Limit the commit message length we accept - #15355",
+      "[Fixed] Prevent repository not found message for large git status operations - #19583",
+      "[Fixed] Add aria-labelledby and aria-describedby attributes to \"Show whitespace changes?\" popover - #19518",
+      "[Fixed] Fix logical tab order from co-authors text box - #19517",
+      "[Fixed] Allow using Escape to dismiss the commit message warning popover - #19514",
+      "[Improved] Improved appearance of the list of files in 'File size limit exceeded' dialog - #19581",
+      "[Improved] Resize events of resizable elements are announced by screen readers - #19649",
+      "[Improved] Update the names of some JetBrains editors on Linux - #19637. Thanks @ankddev!",
+      "[Improved] Swipe image diffs now handle images with transparency better - #16657 #17735. Thanks @Psychpsyo!",
+      "[Improved] Commit messages now show correct indentation - #17691. Thanks @SuperLlama88888!"
+    ],
+    "3.4.10-beta3": [
+      "[Added] Add a banner for communicating when prioritized updates exist - #19655",
+      "[Fixed] Accurately calculate number of conflicted files in a merge - #8049",
+      "[Fixed] Inform user when a staged renamed file renamed has changes - #17467. Thanks @ssigwart!",
+      "[Fixed] The visual label for the remote url in the repository settings is announced by screen readers - #19647",
+      "[Fixed] Remove duplicate avatar users - #19597",
+      "[Fixed] Fix for indents of clear button in text box - #19613. Thanks @artbutko!",
+      "[Improved] Resize events of resizable elements are announced by screen readers - #19649",
+      "[Improved] Update the names of some JetBrains editors on Linux - #19637. Thanks @ankddev!",
+      "[Improved] Swipe image diffs now handle images with transparency better - #16657 #17735. Thanks @Psychpsyo!",
+      "[Improved] Commit messages now show correct indentation - #17691. Thanks @SuperLlama88888!"
+    ],
+    "3.4.10-beta2": [
+      "[Fixed] Screen readers announce the position of the list items in selectable lists such as the history commit list - #19603",
+      "[Fixed] Limit the commit message length we accept - #15355",
+      "[Fixed] Prevent repository not found message for large git status operations - #19583",
+      "[Improved] Improved appearance of the list of files in 'File size limit exceeded' dialog - #19581"
+    ],
+    "3.4.10-beta1": [
+      "[Added] Add \"View Pull Request on GitHub\" Option to the Checked-Out Branch Button and Pull Requests List - #19453. Thanks @DylanDevelops!",
+      "[Fixed] Add aria-labelledby and aria-describedby attributes to \"Show whitespace changes?\" popover - #19518",
+      "[Fixed] Fix logical tab order from co-authors text box - #19517",
+      "[Fixed] Allow using Escape to dismiss the commit message warning popover - #19514"
+    ],
+    "3.4.9": [
+      "[Fixed] App no longer crash for first time users going through the welcome flow and attempting to sign in more than once - #19442",
+      "[Fixed] Files configured to use the binary merge driver are now treated as binary files when resolving conflicts - #9846",
+      "[Fixed] Fix UI glitch rendering tooltips - #19342",
+      "[Improved] Replace hint text of toggle Co-Authors button with a regular tooltip - #19383",
+      "[Improved] Use OS emojis - #19102",
+      "[Improved] Insert unicode emoji - #19376",
+      "[Improved] Allow resizing Branch and Push/Pull toolbar buttons - #4569 #17388. Thanks @jpedroso!",
+      "[Improved] Upgrade Electron to v32.1.2 - #19334",
+      "[Improved] The commit lists in the \"Commit Reachability\" dialogs are traversable in browse mode of screen readers - #19341",
+      "[Removed] Remove ruleset bypass confirmation modal - #19281. Thanks @lofcz!"
+    ],
+    "3.4.9-beta1": [
+      "[Added] Add support for DDS image files - #5337. Thanks @mkafrin!",
+      "[Fixed] Fix drag and drop by addressing breaking Electron change - #19473",
+      "[Fixed] App no longer crash for first time users going through the welcome flow and attempting to sign in more than once - #19442",
+      "[Improved] Insert unicode emoji - #19376"
+    ],
+    "3.4.8": [
+      "[Fixed] App no longer crash for first time users going through the welcome flow and attempting to sign in more than once"
+    ],
+    "3.4.7": [
+      "[Improved] Support entering GitHub.com as a GitHub Enterprise endpoint - #19342"
+    ],
+    "3.4.7-beta2": [
+      "[Fixed] Fix misaligned resizable toolbar buttons - #19330. Thanks @jpedroso!",
+      "[Fixed] Files configured to use the binary merge driver are now treated as binary files when resolving conflicts - #9846",
+      "[Fixed] Fix UI glitch rendering tooltips - #19342",
+      "[Improved] Support entering GitHub.com as a GitHub Enterprise endpoint - #19342",
+      "[Improved] Replace hint text of toggle Co-Authors button with a regular tooltip - #19383",
+      "[Improved] Use OS emojis - #19102",
+      "[Improved] Upgrade Electron to v32.1.2 - #19334"
+    ],
+    "3.4.7-beta1": [
+      "[Improved] The commit lists in the \"Commit Reachability\" dialogs are traversable in browse mode of screen readers - #19341",
+      "[Removed] Remove ruleset bypass confirmation modal - #19281. Thanks @lofcz!"
+    ],
+    "3.4.6": [
+      "[Fixed] Don't show certificate error dialog when probing for endpoint kind - #18991",
+      "[Fixed] Colorize multi-line strings in toml - #14333",
+      "[Fixed] Unset GIT_SEQUENCE_EDITOR when rebasing - #15413",
+      "[Fixed] Use `api.` subdomain for requests to GHE.com hosts - #19312",
+      "[Fixed] Migrate existing GHE account endpoints to the new `api.` subdomain - #19319",
+      "[Fixed] Right-clicking on diff checkmarks displays the context menu - #19302",
+      "[Fixed] Arguments with spaces are passed correctly to custom editors or shells on Windows - #19218",
+      "[Removed] Remove staggered updates block in about dialog - #19274"
+    ],
+    "3.4.6-beta3": [
+      "[Fixed] Don't show certificate error dialog when probing for endpoint kind - #18991"
+    ],
+    "3.4.6-beta2": [
+      "[Fixed] Colorize multi-line strings in toml - #14333",
+      "[Fixed] Workaround for issues with empty environment variable in third-party tools - #19273",
+      "[Fixed] Unset GIT_SEQUENCE_EDITOR when rebasing - #15413",
+      "[Fixed] Use `api.` subdomain for requests to GHE.com hosts - #19312",
+      "[Fixed] Migrate existing GHE account endpoints to the new `api.` subdomain - #19319",
+      "[Fixed] Right-clicking on diff checkmarks displays the context menu - #19302",
+      "[Removed] Remove staggered updates block in about dialog - #19274"
+    ],
     "3.4.6-beta1": [
       "[Fixed] Arguments with spaces are passed correctly to custom editors or shells on Windows - #19218",
       "[Improved] Allow resizing Branch and Push/Pull toolbar buttons - #4569 #17388. Thanks @jpedroso!"
