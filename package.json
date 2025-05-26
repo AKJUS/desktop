@@ -155,7 +155,7 @@
     "@types/webpack-bundle-analyzer": "^4.7.0",
     "@types/webpack-hot-middleware": "^2.25.9",
     "@types/xml2js": "^0.4.11",
-    "electron": "30.0.8",
+    "electron": "36.3.0",
     "electron-packager": "^17.1.1",
     "electron-winstaller": "^5.0.0",
     "eslint-plugin-github": "^4.10.1",
