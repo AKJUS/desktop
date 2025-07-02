@@ -242,6 +242,7 @@ export class BranchDropdown extends React.Component<IBranchDropdownProps> {
           onResize={this.onResize}
           maximumWidth={this.props.branchDropdownWidth.max}
           minimumWidth={this.props.branchDropdownWidth.min}
+          description="Current branch dropdown button"
         >
           <ToolbarDropdown
             className="branch-button"
@@ -308,6 +309,9 @@ export class BranchDropdown extends React.Component<IBranchDropdownProps> {
       name: tip.branch.name,
       isLocal: tip.branch.type === BranchType.Local,
       onRenameBranch: this.onRenameBranch,
+      onViewPullRequestOnGitHub: this.props.currentPullRequest
+        ? this.onViewPullRequestOnGithub
+        : undefined,
       onDeleteBranch: this.onDeleteBranch,
     })
 
@@ -332,6 +336,16 @@ export class BranchDropdown extends React.Component<IBranchDropdownProps> {
       repository: this.props.repository,
       branch,
     })
+  }
+
+  private onViewPullRequestOnGithub = () => {
+    const pr = this.props.currentPullRequest
+
+    if (pr === null) {
+      return
+    }
+
+    this.props.dispatcher.showPullRequestByPR(pr)
   }
 
   private onDeleteBranch = async (branchName: string) => {

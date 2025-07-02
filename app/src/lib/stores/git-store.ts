@@ -93,11 +93,11 @@ import { BaseStore } from './base-store'
 import { getStashes, getStashedFiles } from '../git/stash'
 import { IStashEntry, StashedChangesLoadStates } from '../../models/stash-entry'
 import { PullRequest } from '../../models/pull-request'
-import { StatsStore } from '../stats'
+import { IStatsStore } from '../stats'
 import { getTagsToPush, storeTagsToPush } from './helpers/tags-to-push-storage'
 import { DiffSelection, ITextDiff } from '../../models/diff'
 import { getDefaultBranch } from '../helpers/default-branch'
-import { stat } from 'fs/promises'
+import { rm, stat } from 'fs/promises'
 import { findForkedRemotesToPrune } from './helpers/find-forked-remotes-to-prune'
 import { findDefaultBranch } from '../find-default-branch'
 
@@ -161,7 +161,7 @@ export class GitStore extends BaseStore {
   public constructor(
     private readonly repository: Repository,
     private readonly shell: IAppShell,
-    private readonly statsStore: StatsStore
+    private readonly statsStore: IStatsStore
   ) {
     super()
 
@@ -302,7 +302,7 @@ export class GitStore extends BaseStore {
     }
 
     if (numCreatedTags > 0) {
-      this.statsStore.recordTagCreated(numCreatedTags)
+      this.statsStore.increment('tagsCreated', numCreatedTags)
     }
 
     const commitsToStore = []
@@ -713,6 +713,7 @@ export class GitStore extends BaseStore {
     this._commitMessage = {
       summary: commit.summary,
       description: commit.body,
+      timestamp: Date.now(),
     }
     this.emitUpdate()
   }
@@ -726,6 +727,7 @@ export class GitStore extends BaseStore {
     this._commitMessage = {
       summary: commit.summary,
       description: commit.body,
+      timestamp: Date.now(),
     }
     this.emitUpdate()
   }
@@ -778,6 +780,7 @@ export class GitStore extends BaseStore {
       this._commitMessage = {
         summary: commit.summary,
         description: commit.body,
+        timestamp: Date.now(),
       }
 
       return
@@ -855,6 +858,7 @@ export class GitStore extends BaseStore {
     this._commitMessage = {
       summary: commit.summary,
       description: newBody,
+      timestamp: Date.now(),
     }
 
     const extractedAuthors = extractedTrailers.map(t =>
@@ -1512,21 +1516,33 @@ export class GitStore extends BaseStore {
     await queueWorkHigh(files, async file => {
       const foundSubmodule = submodules.some(s => s.path === file.path)
 
-      if (
-        file.status.kind !== AppFileStatusKind.Deleted &&
-        !foundSubmodule &&
-        moveToTrash
-      ) {
-        // N.B. moveItemToTrash can take a fair bit of time which is why we're
-        // running it inside this work queue that spreads out the calls across
-        // as many animation frames as it needs to.
-        try {
-          await this.shell.moveItemToTrash(
-            Path.resolve(this.repository.path, file.path)
-          )
-        } catch (e) {
-          if (askForConfirmationOnDiscardChangesPermanently) {
-            throw new DiscardChangesError(e, this.repository, files)
+      if (file.status.kind !== AppFileStatusKind.Deleted && !foundSubmodule) {
+        if (moveToTrash) {
+          // N.B. moveItemToTrash can take a fair bit of time which is why we're
+          // running it inside this work queue that spreads out the calls across
+          // as many animation frames as it needs to.
+          try {
+            await this.shell.moveItemToTrash(
+              Path.resolve(this.repository.path, file.path)
+            )
+          } catch (e) {
+            if (askForConfirmationOnDiscardChangesPermanently) {
+              throw new DiscardChangesError(e, this.repository, files)
+            }
+
+            // The user has received the confirmation dialog in past and has
+            // chosen to always discard the changes permanently if trash failes.
+            // We need to remove the file manually.
+            if (file.status.kind === AppFileStatusKind.Untracked) {
+              await rm(Path.join(this.repository.path, file.path))
+            }
+          }
+        } else if (moveToTrash === false) {
+          // The user has received the confirmation dialog and has chosen to
+          // discard the changes permanently. We need to remove the file
+          // manually.
+          if (file.status.kind === AppFileStatusKind.Untracked) {
+            await rm(Path.join(this.repository.path, file.path))
           }
         }
       }

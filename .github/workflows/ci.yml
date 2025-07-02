@@ -38,7 +38,7 @@ on:
       APPLE_APPLICATION_CERT_PASSWORD:
 
 env:
-  NODE_VERSION: 20.11.1
+  NODE_VERSION: 22.14.0
 
 jobs:
   lint:
@@ -70,14 +70,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-13-xl-arm64, windows-2019]
+        os: [macos-13-xlarge, windows-2022]
         arch: [x64, arm64]
         include:
-          - os: macos-13-xl-arm64
+          - os: macos-13-xlarge
             friendlyName: macOS
-          - os: windows-2019
+          - os: windows-2022
             friendlyName: Windows
     timeout-minutes: 60
+    environment: ${{ inputs.environment }}
     env:
       RELEASE_CHANNEL: ${{ inputs.environment }}
     steps:
@@ -99,6 +100,11 @@ jobs:
         env:
           npm_config_arch: ${{ matrix.arch }}
           TARGET_ARCH: ${{ matrix.arch }}
+      - name: Run desktop-trampoline tests
+        run: |
+          cd vendor/desktop-trampoline
+          yarn install
+          yarn test
       - name: Build production app
         run: yarn build:prod
         env:
@@ -113,15 +119,14 @@ jobs:
           npm_config_arch: ${{ matrix.arch }}
           TARGET_ARCH: ${{ matrix.arch }}
       - name: Prepare testing environment
-        if: matrix.arch == 'x64'
         run: yarn test:setup
         env:
           npm_config_arch: ${{ matrix.arch }}
       - name: Run unit tests
-        if: matrix.arch == 'x64'
+        if: |
+          (runner.os == 'Windows' && matrix.arch == 'x64') || (runner.os == 'macOS' && matrix.arch == 'arm64')
         run: yarn test:unit
       - name: Run script tests
-        if: matrix.arch == 'x64'
         run: yarn test:script
       - name: Install Azure Code Signing Client
         if: ${{ runner.os == 'Windows' && inputs.sign }}

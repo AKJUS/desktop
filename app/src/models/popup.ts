@@ -23,6 +23,8 @@ import { GitHubRepository } from './github-repository'
 import { ValidNotificationPullRequestReview } from '../lib/valid-notification-pull-request-review'
 import { UnreachableCommitsTab } from '../ui/history/unreachable-commits-dialog'
 import { IAPIComment } from '../lib/api'
+import { ISecretScanResult } from '../ui/secret-scanning/push-protection-error-dialog'
+import { BypassReasonType } from '../ui/secret-scanning/bypass-push-protection-dialog'
 
 export enum PopupType {
   RenameBranch = 'RenameBranch',
@@ -94,8 +96,13 @@ export enum PopupType {
   TestNotifications = 'TestNotifications',
   PullRequestComment = 'PullRequestComment',
   UnknownAuthors = 'UnknownAuthors',
-  ConfirmRepoRulesBypass = 'ConfirmRepoRulesBypass',
   TestIcons = 'TestIcons',
+  ConfirmCommitFilteredChanges = 'ConfirmCommitFilteredChanges',
+  TestAbout = 'TestAbout',
+  PushProtectionError = 'PushProtectionError',
+  BypassPushProtection = 'BypassPushProtection',
+  GenerateCommitMessageOverrideWarning = 'GenerateCommitMessageOverrideWarning',
+  GenerateCommitMessageDisclaimer = 'GenerateCommitMessageDisclaimer',
 }
 
 interface IBasePopup {
@@ -422,13 +429,40 @@ export type PopupDetail =
       onCommit: () => void
     }
   | {
-      type: PopupType.ConfirmRepoRulesBypass
-      repository: GitHubRepository
-      branch: string
-      onConfirm: () => void
+      type: PopupType.TestIcons
     }
   | {
-      type: PopupType.TestIcons
+      type: PopupType.ConfirmCommitFilteredChanges
+      onCommitAnyway: () => void
+      showFilesToBeCommitted: () => void
+    }
+  | {
+      type: PopupType.TestAbout
+    }
+  | {
+      type: PopupType.PushProtectionError
+      secrets: ReadonlyArray<ISecretScanResult>
+    }
+  | {
+      type: PopupType.BypassPushProtection
+      secret: ISecretScanResult
+      bypassPushProtection: (
+        secret: ISecretScanResult,
+        reason: BypassReasonType
+      ) => void
+      onDismissed: () => void
+    }
+  | {
+      type: PopupType.GenerateCommitMessageOverrideWarning
+      repository: Repository
+      filesSelected: ReadonlyArray<WorkingDirectoryFileChange>
+    }
+  | {
+      type: PopupType.GenerateCommitMessageDisclaimer
+      // Same parameters as PopupType.GenerateCommitMessageOverrideWarning because
+      // from this popup we will trigger the commit message generation too.
+      repository: Repository
+      filesSelected: ReadonlyArray<WorkingDirectoryFileChange>
     }
 
 export type Popup = IBasePopup & PopupDetail

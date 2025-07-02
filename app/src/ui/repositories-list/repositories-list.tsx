@@ -5,9 +5,8 @@ import {
   groupRepositories,
   IRepositoryListItem,
   Repositoryish,
-  RepositoryGroupIdentifier,
-  KnownRepositoryGroup,
-  makeRecentRepositoriesGroup,
+  RepositoryListGroup,
+  getGroupKey,
 } from './group-repositories'
 import { IFilterListGroup } from '../lib/filter-list'
 import { IMatches } from '../../lib/fuzzy-find'
@@ -25,10 +24,10 @@ import memoizeOne from 'memoize-one'
 import { KeyboardShortcut } from '../keyboard-shortcut/keyboard-shortcut'
 import { generateRepositoryListContextMenu } from '../repositories-list/repository-list-item-context-menu'
 import { SectionFilterList } from '../lib/section-filter-list'
+import { assertNever } from '../../lib/fatal-error'
+import { enableMultipleEnterpriseAccounts } from '../../lib/feature-flag'
 
 const BlankSlateImage = encodePathAsUrl(__dirname, 'static/empty-no-repo.svg')
-
-const recentRepositoriesThreshold = 7
 
 interface IRepositoriesListProps {
   readonly selectedRepository: Repositoryish | null
@@ -79,6 +78,7 @@ interface IRepositoriesListProps {
 
 interface IRepositoriesListState {
   readonly newRepositoryMenuExpanded: boolean
+  readonly selectedItem: IRepositoryListItem | null
 }
 
 const RowHeight = 29
@@ -88,7 +88,9 @@ const RowHeight = 29
  * the id of the provided repository.
  */
 function findMatchingListItem(
-  groups: ReadonlyArray<IFilterListGroup<IRepositoryListItem>>,
+  groups: ReadonlyArray<
+    IFilterListGroup<IRepositoryListItem, RepositoryListGroup>
+  >,
   selectedRepository: Repositoryish | null
 ) {
   if (selectedRepository !== null) {
@@ -118,11 +120,16 @@ export class RepositoriesList extends React.Component<
   private getRepositoryGroups = memoizeOne(
     (
       repositories: ReadonlyArray<Repositoryish> | null,
-      localRepositoryStateLookup: ReadonlyMap<number, ILocalRepositoryState>
+      localRepositoryStateLookup: ReadonlyMap<number, ILocalRepositoryState>,
+      recentRepositories: ReadonlyArray<number>
     ) =>
       repositories === null
         ? []
-        : groupRepositories(repositories, localRepositoryStateLookup)
+        : groupRepositories(
+            repositories,
+            localRepositoryStateLookup,
+            recentRepositories
+          )
   )
 
   /**
@@ -141,6 +148,7 @@ export class RepositoriesList extends React.Component<
 
     this.state = {
       newRepositoryMenuExpanded: false,
+      selectedItem: null,
     }
   }
 
@@ -158,23 +166,27 @@ export class RepositoriesList extends React.Component<
     )
   }
 
-  private getGroupLabel(identifier: RepositoryGroupIdentifier) {
-    if (identifier === KnownRepositoryGroup.Enterprise) {
-      return 'Enterprise'
-    } else if (identifier === KnownRepositoryGroup.NonGitHub) {
+  private getGroupLabel(group: RepositoryListGroup) {
+    const { kind } = group
+    if (kind === 'enterprise') {
+      return enableMultipleEnterpriseAccounts() ? group.host : 'Enterprise'
+    } else if (kind === 'other') {
       return 'Other'
+    } else if (kind === 'dotcom') {
+      return group.owner.login
+    } else if (kind === 'recent') {
+      return 'Recent'
     } else {
-      return identifier
+      assertNever(kind, `Unknown repository group kind ${kind}`)
     }
   }
 
-  private renderGroupHeader = (id: string) => {
-    const identifier = id as RepositoryGroupIdentifier
-    const label = this.getGroupLabel(identifier)
+  private renderGroupHeader = (group: RepositoryListGroup) => {
+    const label = this.getGroupLabel(group)
 
     return (
       <TooltippedContent
-        key={identifier}
+        key={getGroupKey(group)}
         className="filter-list-group-header"
         tooltip={label}
         onlyWhenOverflowed={true}
@@ -221,36 +233,33 @@ export class RepositoriesList extends React.Component<
 
   private getItemAriaLabel = (item: IRepositoryListItem) => item.repository.name
   private getGroupAriaLabelGetter =
-    (groups: ReadonlyArray<IFilterListGroup<IRepositoryListItem>>) =>
+    (
+      groups: ReadonlyArray<
+        IFilterListGroup<IRepositoryListItem, RepositoryListGroup>
+      >
+    ) =>
     (group: number) =>
-      groups[group].identifier
+      this.getGroupLabel(groups[group].identifier)
 
   public render() {
-    const baseGroups = this.getRepositoryGroups(
+    const groups = this.getRepositoryGroups(
       this.props.repositories,
-      this.props.localRepositoryStateLookup
+      this.props.localRepositoryStateLookup,
+      this.props.recentRepositories
     )
 
-    const selectedItem = this.getSelectedListItem(
-      baseGroups,
-      this.props.selectedRepository
-    )
-
-    const groups =
-      this.props.repositories.length > recentRepositoriesThreshold
-        ? [
-            makeRecentRepositoriesGroup(
-              this.props.recentRepositories,
-              this.props.repositories,
-              this.props.localRepositoryStateLookup
-            ),
-            ...baseGroups,
-          ]
-        : baseGroups
+    // So there's two types of selection at play here. There's the repository
+    // selection for the whole app and then there's the keyboard selection in
+    // the list itself. If the user has selected a repository using keyboard
+    // navigation we want to honor that selection. If the user hasn't selected a
+    // repository yet we'll select the repository currently selected in the app.
+    const selectedItem =
+      this.state.selectedItem ??
+      this.getSelectedListItem(groups, this.props.selectedRepository)
 
     return (
       <div className="repository-list">
-        <SectionFilterList<IRepositoryListItem>
+        <SectionFilterList<IRepositoryListItem, RepositoryListGroup>
           rowHeight={RowHeight}
           selectedItem={selectedItem}
           filterText={this.props.filterText}
@@ -268,9 +277,14 @@ export class RepositoriesList extends React.Component<
           onItemContextMenu={this.onItemContextMenu}
           getGroupAriaLabel={this.getGroupAriaLabelGetter(groups)}
           getItemAriaLabel={this.getItemAriaLabel}
+          onSelectionChanged={this.onSelectionChanged}
         />
       </div>
     )
+  }
+
+  private onSelectionChanged = (selectedItem: IRepositoryListItem | null) => {
+    this.setState({ selectedItem })
   }
 
   private renderPostFilter = () => {
@@ -279,11 +293,20 @@ export class RepositoriesList extends React.Component<
         className="new-repository-button"
         onClick={this.onNewRepositoryButtonClick}
         ariaExpanded={this.state.newRepositoryMenuExpanded}
+        onKeyDown={this.onNewRepositoryButtonKeyDown}
       >
         Add
         <Octicon symbol={octicons.triangleDown} />
       </Button>
     )
+  }
+
+  private onNewRepositoryButtonKeyDown = (
+    event: React.KeyboardEvent<HTMLButtonElement>
+  ) => {
+    if (event.key === 'ArrowDown') {
+      this.onNewRepositoryButtonClick()
+    }
   }
 
   private renderNoItems = () => {

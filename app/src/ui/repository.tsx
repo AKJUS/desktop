@@ -52,12 +52,14 @@ interface IRepositoryViewProps {
   readonly showSideBySideDiff: boolean
   readonly showDiffCheckMarks: boolean
   readonly askForConfirmationOnDiscardChanges: boolean
+  readonly askForConfirmationOnCommitFilteredChanges: boolean
   readonly askForConfirmationOnDiscardStash: boolean
   readonly askForConfirmationOnCheckoutCommit: boolean
   readonly focusCommitMessage: boolean
   readonly commitSpellcheckEnabled: boolean
   readonly showCommitLengthWarning: boolean
   readonly accounts: ReadonlyArray<Account>
+  readonly shouldShowGenerateCommitMessageCallOut: boolean
 
   /**
    * A value indicating whether or not the application is currently presenting
@@ -108,6 +110,9 @@ interface IRepositoryViewProps {
 
   /** The user's preference of pull request suggested next action to use **/
   readonly pullRequestSuggestedNextAction?: PullRequestSuggestedNextAction
+
+  /** Whether or not to show the changes filter */
+  readonly showChangesFilter: boolean
 }
 
 interface IRepositoryViewState {
@@ -244,11 +249,18 @@ export class RepositoryView extends React.Component<
         availableWidth={availableWidth}
         gitHubUserStore={this.props.gitHubUserStore}
         isCommitting={this.props.state.isCommitting}
+        isGeneratingCommitMessage={this.props.state.isGeneratingCommitMessage}
+        shouldShowGenerateCommitMessageCallOut={
+          this.props.shouldShowGenerateCommitMessageCallOut
+        }
         commitToAmend={this.props.state.commitToAmend}
         isPushPullFetchInProgress={this.props.state.isPushPullFetchInProgress}
         focusCommitMessage={this.props.focusCommitMessage}
         askForConfirmationOnDiscardChanges={
           this.props.askForConfirmationOnDiscardChanges
+        }
+        askForConfirmationOnCommitFilteredChanges={
+          this.props.askForConfirmationOnCommitFilteredChanges
         }
         accounts={this.props.accounts}
         isShowingModal={this.props.isShowingModal}
@@ -262,6 +274,7 @@ export class RepositoryView extends React.Component<
         }
         commitSpellcheckEnabled={this.props.commitSpellcheckEnabled}
         showCommitLengthWarning={this.props.showCommitLengthWarning}
+        showChangesFilter={this.props.showChangesFilter}
       />
     )
   }
@@ -351,6 +364,7 @@ export class RepositoryView extends React.Component<
           minimumWidth={this.props.sidebarWidth.min}
           onReset={this.handleSidebarWidthReset}
           onResize={this.handleSidebarResize}
+          description="Repository sidebar"
         >
           {this.renderTabs()}
           {this.renderSidebarContents()}

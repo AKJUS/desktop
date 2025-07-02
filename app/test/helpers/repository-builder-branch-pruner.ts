@@ -1,6 +1,6 @@
 import { setupEmptyRepository } from './repositories'
 import { makeCommit, switchTo } from './repository-scaffolding'
-import { GitProcess } from 'dugite'
+import { exec } from 'dugite'
 import { RepositoriesStore, GitStore } from '../../src/lib/stores'
 import { RepositoryStateCache } from '../../src/lib/stores/repository-state-cache'
 import {
@@ -9,12 +9,11 @@ import {
 } from '../../src/models/repository'
 import { IAPIFullRepository, getDotComAPIEndpoint } from '../../src/lib/api'
 import { shell } from './test-app-shell'
-import { StatsStore, StatsDatabase } from '../../src/lib/stats'
-import { UiActivityMonitor } from '../../src/ui/lib/ui-activity-monitor'
-import { fakePost } from '../fake-stats-post'
+import { TestStatsStore } from './test-stats-store'
+import { TestContext } from 'node:test'
 
-export async function createRepository() {
-  const repo = await setupEmptyRepository()
+export async function createRepository(t: TestContext) {
+  const repo = await setupEmptyRepository(t)
 
   const firstCommit = {
     entries: [
@@ -27,7 +26,7 @@ export async function createRepository() {
 
   // creating the new branch before switching so that we have distinct changes
   // on both branches and also to ensure a merge commit is needed
-  await GitProcess.exec(['branch', 'other-branch'], repo.path)
+  await exec(['branch', 'other-branch'], repo.path)
 
   const secondCommit = {
     entries: [{ path: 'foo', contents: 'b1' }],
@@ -50,10 +49,10 @@ export async function createRepository() {
   await switchTo(repo, 'master')
 
   // ensure the merge operation always creates a merge commit
-  await GitProcess.exec(['merge', 'other-branch', '--no-ff'], repo.path)
+  await exec(['merge', 'other-branch', '--no-ff'], repo.path)
 
   // clear reflog of all entries, so any branches are considered candidates for pruning
-  await GitProcess.exec(
+  await exec(
     ['reflog', 'expire', '--expire=now', '--expire-unreachable=now', '--all'],
     repo.path
   )
@@ -120,15 +119,7 @@ async function primeCaches(
   repository: Repository,
   repositoriesStateCache: RepositoryStateCache
 ) {
-  const gitStore = new GitStore(
-    repository,
-    shell,
-    new StatsStore(
-      new StatsDatabase('test-StatsDatabase'),
-      new UiActivityMonitor(),
-      fakePost
-    )
-  )
+  const gitStore = new GitStore(repository, shell, new TestStatsStore())
 
   // rather than re-create the branches and stuff as objects, these calls
   // will run the underlying Git operations and update the GitStore state

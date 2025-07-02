@@ -31,6 +31,8 @@ import { isConflictedFile, hasUnresolvedConflicts } from '../../lib/status'
 import { getAccountForRepository } from '../../lib/get-account-for-repository'
 import { IAheadBehind } from '../../models/branch'
 import { Emoji } from '../../lib/emoji'
+import { enableFilteredChangesList } from '../../lib/feature-flag'
+import { FilterChangesList } from './filter-changes-list'
 
 /**
  * The timeout for the animation of the enter/leave animation for Undo.
@@ -54,6 +56,8 @@ interface IChangesSidebarProps {
   readonly issuesStore: IssuesStore
   readonly availableWidth: number
   readonly isCommitting: boolean
+  readonly isGeneratingCommitMessage: boolean
+  readonly shouldShowGenerateCommitMessageCallOut: boolean
   readonly commitToAmend: Commit | null
   readonly isPushPullFetchInProgress: boolean
   // Used in receiveProps, no-unused-prop-types doesn't know that
@@ -61,6 +65,7 @@ interface IChangesSidebarProps {
   readonly gitHubUserStore: GitHubUserStore
   readonly focusCommitMessage: boolean
   readonly askForConfirmationOnDiscardChanges: boolean
+  readonly askForConfirmationOnCommitFilteredChanges: boolean
   readonly accounts: ReadonlyArray<Account>
   readonly isShowingModal: boolean
   readonly isShowingFoldout: boolean
@@ -85,6 +90,9 @@ interface IChangesSidebarProps {
   readonly commitSpellcheckEnabled: boolean
 
   readonly showCommitLengthWarning: boolean
+
+  /** Whether or not to show the changes filter */
+  readonly showChangesFilter: boolean
 }
 
 export class ChangesSidebar extends React.Component<IChangesSidebarProps, {}> {
@@ -193,17 +201,12 @@ export class ChangesSidebar extends React.Component<IChangesSidebarProps, {}> {
     )
   }
 
-  private onIncludeChanged = (path: string, include: boolean) => {
-    const workingDirectory = this.props.changes.workingDirectory
-    const file = workingDirectory.files.find(f => f.path === path)
-    if (!file) {
-      console.error(
-        'unable to find working directory file to apply included change: ' +
-          path
-      )
-      return
-    }
-
+  private onIncludeChanged = (
+    file:
+      | WorkingDirectoryFileChange
+      | ReadonlyArray<WorkingDirectoryFileChange>,
+    include: boolean
+  ) => {
     this.props.dispatcher.changeFileIncluded(
       this.props.repository,
       file,
@@ -395,9 +398,13 @@ export class ChangesSidebar extends React.Component<IChangesSidebarProps, {}> {
       this.props.repository
     )
 
+    const ChangesListComponent = enableFilteredChangesList()
+      ? FilterChangesList
+      : ChangesList
+
     return (
       <div className="panel" role="tabpanel" aria-labelledby="changes-tab">
-        <ChangesList
+        <ChangesListComponent
           ref={this.changesListRef}
           dispatcher={this.props.dispatcher}
           repository={this.props.repository}
@@ -415,6 +422,9 @@ export class ChangesSidebar extends React.Component<IChangesSidebarProps, {}> {
           askForConfirmationOnDiscardChanges={
             this.props.askForConfirmationOnDiscardChanges
           }
+          askForConfirmationOnCommitFilteredChanges={
+            this.props.askForConfirmationOnCommitFilteredChanges
+          }
           onDiscardChangesFromFiles={this.onDiscardChangesFromFiles}
           onOpenItem={this.onOpenItem}
           onRowClick={this.onChangedItemClick}
@@ -429,6 +439,10 @@ export class ChangesSidebar extends React.Component<IChangesSidebarProps, {}> {
           onIgnoreFile={this.onIgnoreFile}
           onIgnorePattern={this.onIgnorePattern}
           isCommitting={this.props.isCommitting}
+          isGeneratingCommitMessage={this.props.isGeneratingCommitMessage}
+          shouldShowGenerateCommitMessageCallOut={
+            this.props.shouldShowGenerateCommitMessageCallOut
+          }
           commitToAmend={this.props.commitToAmend}
           showCoAuthoredBy={showCoAuthoredBy}
           coAuthors={coAuthors}
@@ -445,6 +459,11 @@ export class ChangesSidebar extends React.Component<IChangesSidebarProps, {}> {
           currentRepoRulesInfo={currentRepoRulesInfo}
           aheadBehind={this.props.aheadBehind}
           accounts={this.props.accounts}
+          filterText={this.props.changes.filterText}
+          includedChangesInCommitFilter={
+            this.props.changes.includedChangesInCommitFilter
+          }
+          showChangesFilter={this.props.showChangesFilter}
         />
         {this.renderUndoCommit(rebaseConflictState)}
       </div>

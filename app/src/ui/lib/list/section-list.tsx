@@ -28,6 +28,7 @@ import {
   RowIndexPath,
   rowIndexPathEquals,
   rowIndexPathToGlobalIndex,
+  rowListIncludesIndexPath,
 } from './list-row-index-path'
 import { range } from '../../../lib/range'
 import { sendNonFatalException } from '../../../lib/helpers/non-fatal-exception'
@@ -301,11 +302,8 @@ interface ISectionListProps {
    */
   readonly setScrollTop?: number
 
-  /** The aria-labelledby attribute for the list component. */
-  readonly ariaLabelledBy?: string
-
-  /** The aria-label attribute for the list component. */
-  readonly ariaLabel?: string
+  /** The aria-label attribute for the section list component. */
+  readonly getSectionAriaLabel?: (section: number) => string | undefined
 
   /**
    * Optional callback for providing an aria label for screen readers for each
@@ -846,9 +844,14 @@ export class SectionList extends React.Component<
     }
 
     const lastSelection =
-      this.props.selectedRows[this.props.selectedRows.length - 1]
+      direction === 'down'
+        ? this.props.selectedRows[this.props.selectedRows.length - 1]
+        : this.props.selectedRows[0]
 
-    const selectionOrigin = this.props.selectedRows[0]
+    const selectionOrigin =
+      direction === 'down'
+        ? this.props.selectedRows[0]
+        : this.props.selectedRows.at(-1)
 
     const newRow = findNextSelectableRow(
       this.props.rowCount,
@@ -856,7 +859,7 @@ export class SectionList extends React.Component<
       this.canSelectRow
     )
 
-    if (newRow != null) {
+    if (newRow != null && selectionOrigin !== undefined) {
       if (this.props.onSelectionChanged) {
         const newSelection = createSelectionBetween(
           selectionOrigin,
@@ -1131,7 +1134,7 @@ export class SectionList extends React.Component<
     const customClasses = new Array<string>()
     rowCustomClassNameMap.forEach(
       (rows: ReadonlyArray<RowIndexPath>, className: string) => {
-        if (rows.includes(rowIndex)) {
+        if (rowListIncludesIndexPath(rows, rowIndex)) {
           customClasses.push(className)
         }
       }
@@ -1242,14 +1245,7 @@ export class SectionList extends React.Component<
     }
 
     return (
-      // eslint-disable-next-line github/a11y-role-supports-aria-props
-      <div
-        ref={this.onRef}
-        id={this.props.id}
-        className="list"
-        aria-labelledby={this.props.ariaLabelledBy}
-        aria-label={this.props.ariaLabel}
-      >
+      <div ref={this.onRef} id={this.props.id} className="list">
         {content}
       </div>
     )
@@ -1354,6 +1350,7 @@ export class SectionList extends React.Component<
           overscanRowCount={4}
           style={{ ...params.style, width: '100%' }}
           tabIndex={-1}
+          aria-label={this.props.getSectionAriaLabel?.(section)}
         />
       )
     }
@@ -1385,7 +1382,7 @@ export class SectionList extends React.Component<
   private get totalHeight() {
     return this.props.rowCount.reduce((total, _count, section) => {
       return total + this.getSectionHeight(section)
-    })
+    }, 0)
   }
 
   private sectionHeight = ({ index }: Index) => {
@@ -1525,7 +1522,10 @@ export class SectionList extends React.Component<
         (__DARWIN__ && event.button === 0 && event.ctrlKey)
 
       // prevent the right-click event from changing the selection if not necessary
-      if (isRightClick && this.props.selectedRows.includes(row)) {
+      if (
+        isRightClick &&
+        rowListIncludesIndexPath(this.props.selectedRows, row)
+      ) {
         return
       }
 
@@ -1570,7 +1570,7 @@ export class SectionList extends React.Component<
          */
         if (this.props.onSelectionChanged) {
           let newSelection: ReadonlyArray<RowIndexPath>
-          if (this.props.selectedRows.includes(row)) {
+          if (rowListIncludesIndexPath(this.props.selectedRows, row)) {
             // remove the ability to deselect the last item
             if (this.props.selectedRows.length === 1) {
               return
@@ -1591,7 +1591,7 @@ export class SectionList extends React.Component<
         (this.props.selectionMode === 'range' ||
           this.props.selectionMode === 'multi') &&
         this.props.selectedRows.length > 1 &&
-        this.props.selectedRows.includes(row)
+        rowListIncludesIndexPath(this.props.selectedRows, row)
       ) {
         // Do nothing. Multiple rows are already selected. We assume the user is
         // pressing down on multiple and may desire to start dragging. We will
@@ -1622,7 +1622,10 @@ export class SectionList extends React.Component<
       event.button === 2 || (__DARWIN__ && event.button === 0 && event.ctrlKey)
 
     // prevent the right-click event from changing the selection if not necessary
-    if (isRightClick && this.props.selectedRows.includes(row)) {
+    if (
+      isRightClick &&
+      rowListIncludesIndexPath(this.props.selectedRows, row)
+    ) {
       return
     }
 
@@ -1632,7 +1635,7 @@ export class SectionList extends React.Component<
       !event.shiftKey &&
       !multiSelectKey &&
       this.props.selectedRows.length > 1 &&
-      this.props.selectedRows.includes(row) &&
+      rowListIncludesIndexPath(this.props.selectedRows, row) &&
       (this.props.selectionMode === 'range' ||
         this.props.selectionMode === 'multi')
     ) {

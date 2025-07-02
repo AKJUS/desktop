@@ -26,7 +26,7 @@ import {
 } from '../generic-git-auth'
 import { urlWithoutCredentials } from './url-without-credentials'
 import { trampolineUIHelper as ui } from './trampoline-ui-helper'
-import { isGitHubHost } from '../api'
+import { getAPIEndpoint, isGitHubHost } from '../api'
 import { isDotCom, isGHE, isGist } from '../endpoint-capabilities'
 
 type Credential = Map<string, string>
@@ -101,22 +101,20 @@ async function getCredential(cred: Credential, store: Store, token: string) {
   const endpointKind = await getEndpointKind(cred, store)
   const accounts = await store.getAll()
 
-  const hasDotComAccount = accounts.some(a => isDotCom(a.endpoint))
-  const hasEnterpriseAccount = accounts.some(a => !isDotCom(a.endpoint))
+  const endpoint = `${getCredentialUrl(cred)}`
+  const apiEndpoint = getAPIEndpoint(endpoint)
 
   // If it appears as if the endpoint is a GitHub host and we don't have an
-  // account for it (since we currently only allow one GitHub.com account and
-  // one Enterprise account) we prompt the user to sign in.
+  // account for that endpoint then we should prompt the user to sign in.
   if (
-    (endpointKind === 'github.com' && !hasDotComAccount) ||
-    (endpointKind === 'enterprise' && !hasEnterpriseAccount)
+    endpointKind !== 'generic' &&
+    !accounts.some(a => a.endpoint === apiEndpoint)
   ) {
     if (getIsBackgroundTaskEnvironment(token)) {
       debug('background task environment, skipping prompt')
       return undefined
     }
 
-    const endpoint = `${getCredentialUrl(cred)}`
     const account = await ui.promptForGitHubSignIn(endpoint)
 
     if (!account) {
@@ -156,12 +154,14 @@ const getEndpointKind = async (cred: Credential, store: Store) => {
   // WWW-Authenticate headers and forwards them to the credential helper. We
   // use them as a happy-path to determine if the host is a GitHub host without
   // having to resort to making a request ourselves.
-  if (
-    [...cred.entries()]
-      .filter(([k]) => k.startsWith('wwwauth['))
-      .some(([, v]) => v.includes('realm="GitHub"'))
-  ) {
-    return 'enterprise'
+  for (const [k, v] of cred.entries()) {
+    if (k.startsWith('wwwauth[')) {
+      if (v.includes('realm="GitHub"')) {
+        return 'enterprise'
+      } else if (/realm="(GitLab|Gitea|Atlassian Bitbucket)"/.test(v)) {
+        return 'generic'
+      }
+    }
   }
 
   const existingAccount = await findGitHubTrampolineAccount(store, endpoint)

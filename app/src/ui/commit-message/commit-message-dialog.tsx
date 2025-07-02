@@ -125,7 +125,6 @@ export class CommitMessageDialog extends React.Component<
             branch={this.props.branch}
             mostRecentLocalCommit={null}
             commitAuthor={this.props.commitAuthor}
-            dispatcher={this.props.dispatcher}
             isShowingModal={true}
             isShowingFoldout={false}
             commitButtonText={this.props.dialogButtonText}
@@ -153,6 +152,7 @@ export class CommitMessageDialog extends React.Component<
             onCreateCommit={this.props.onSubmitCommitMessage}
             anyFilesAvailable={true}
             anyFilesSelected={true}
+            filesSelected={[]}
             onCommitMessageFocusSet={noop}
             onRefreshAuthor={this.onRefreshAuthor}
             onShowPopup={this.onShowPopup}
